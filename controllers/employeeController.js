@@ -1,5 +1,6 @@
 const { status } = require('express/lib/response');
 const Employee = require('../model/Employee')
+const mongoose = require('mongoose');
 
 
 //GET /api/v1/emp/employees User can get all employee list
@@ -46,7 +47,10 @@ exports.createEmployee = async (req, res) => {
 
 exports.detailsById = async(req, res) => {
     try{
-        const employee = await Employee.findById(req.params.employee_id)
+        if (!mongoose.Types.ObjectId.isValid(req.params.eid)) {
+            return res.status(400).json({ status: false, message: "Invalid Employee ID" });
+        }
+        const employee = await Employee.findById(req.params.eid)
         if(!employee) {
             return res.status(400).json({status: false, message: "Employee not Found"})
         }
@@ -57,11 +61,16 @@ exports.detailsById = async(req, res) => {
     };
 };
 
+
+
 //PUT   /api/v1/emp/employees/{eid} User can update employee details
 
 exports.updateById = async(req, res) => {
     try{
-        const updatedEmployee = await Employee.findByIdAndUpdate(req.params.employee_id, req.body, { new: true}); // eid
+        if (!mongoose.Types.ObjectId.isValid(req.params.eid)) {
+            return res.status(400).json({ status: false, message: "Invalid Employee ID" });
+        }
+        const updatedEmployee = await Employee.findByIdAndUpdate(req.params.eid, req.body, { new: true}); 
         if(!updatedEmployee) {
             return res.status(404).json({status: false,message: "Employee not Found"});
         }
@@ -76,12 +85,17 @@ exports.updateById = async(req, res) => {
 
 exports.deleteById = async(req, res) => {
     try{
-        const employee_id = req.body;
-        const deleteEmployee = await Employee.findByIdAndDelete(employee_id);
+        const { eid } = req.query;
+
+        if (!mongoose.Types.ObjectId.isValid(eid)) {
+            return res.status(400).json({ status: false, message: "Invalid Employee ID" });
+        }
+        
+        const deleteEmployee = await Employee.findByIdAndDelete(eid);
         if(!deleteEmployee){
             res.status(404).json({status:false, message: "Employee not Found"});
         }
-        res.status(200).json({message: "Employee Successfully Deleted"})
+        res.status(204).json({message: "Employee Successfully Deleted"})
     }
     catch(err){
         res.status(500).json({status: false, message: err.message});
